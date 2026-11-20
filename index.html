@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Record what you spend, note what it was for, and see your weekly and monthly totals." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SpendNote" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>SpendNote</title>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Shown while the app's code loads; React replaces it. Mirrors LoadingScreen in src/App.tsx. -->
+      <div
+        role="status"
+        aria-label="Loading SpendNote by O.B (Osei-Bonsu)"
+        style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px;text-align:center;background:#0a0a0a;font-family:'Inter Variable',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif"
+      >
+        <img src="/favicon.svg" width="64" height="64" alt="" />
+        <p style="margin:18px 0 0;font-size:26px;font-weight:600;line-height:1.25;letter-spacing:-0.02em;color:#fff">SpendNote</p>
+        <p style="margin:6px 0 0;font-size:15px;color:rgba(255,255,255,0.6)">by O.B (Osei-Bonsu)</p>
+      </div>
+    </div>
+    <noscript>SpendNote needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

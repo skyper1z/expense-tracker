@@ -1,0 +1,15 @@
+node_modules
+dist
+dev-dist
+*.log
+.DS_Store
+
+# Secrets
+.env
+.env.local
+.env.*.local
+supabase/functions/.env
+
+# Supabase CLI
+supabase/.temp
+supabase/.branches

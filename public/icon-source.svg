@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- App icon: a dark card resting on an orange slab, like the summary card. Content stays inside the maskable safe zone. -->
+  <defs>
+    <linearGradient id="slab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5c230a"/>
+      <stop offset="0.35" stop-color="#93360d"/>
+      <stop offset="0.75" stop-color="#d9530f"/>
+      <stop offset="1" stop-color="#ff6f22"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b1b1b"/>
+      <stop offset="0.6" stop-color="#181818"/>
+      <stop offset="1" stop-color="#3b1708"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="1.05" r="0.6">
+      <stop offset="0" stop-color="#ff6a1a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff6a1a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <rect x="128" y="250" width="256" height="148" rx="52" fill="url(#slab)"/>
+  <rect x="108" y="118" width="296" height="214" rx="58" fill="url(#card)"/>
+  <rect x="108" y="118" width="296" height="214" rx="58" fill="url(#glow)"/>
+  <rect x="108.5" y="118.5" width="295" height="213" rx="57.5" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+  <path d="M166 196h180M166 252h112" stroke="#ffffff" stroke-width="26" stroke-linecap="round"/>
+</svg>
