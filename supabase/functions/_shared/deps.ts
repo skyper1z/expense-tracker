@@ -2,13 +2,16 @@
  * Wires the OTP handlers to real services inside the Supabase Edge Runtime (Deno).
  *
  * Secrets (set with `supabase secrets set …`, or supabase/functions/.env locally):
- *   AUTHENTICA_API_KEY            required
- *   AUTHENTICA_EMAIL_TEMPLATE_ID  optional, numeric template id from the Authentica dashboard
- *   ALLOWED_ORIGINS               optional, comma-separated, e.g. https://spendnote.app
+ *   BREVO_API_KEY or RESEND_API_KEY   one of these (free email APIs that deliver the codes)
+ *   EMAIL_FROM                        sender, e.g. "SpendNote <you@example.com>" (must be verified with the provider)
+ *   ALLOWED_ORIGINS                   optional, comma-separated, e.g. https://spendnote.app
+ *   OTP_SECRET                        optional; key for hashing codes (defaults to the service role key)
  * Provided automatically by Supabase: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY.
  */
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.119.2';
-import { createAuthenticaClient } from './authentica.ts';
+import {
+  createBrevoSender, createEmailOtpProvider, createResendSender, parseFrom, type CheckOutcome, type EmailSender,
+} from './email-otp.ts';
 import type { Gate, IssuedSession, OtpDeps } from './otp.ts';
 
 function toGate(data: unknown): Gate {
@@ -17,9 +20,10 @@ function toGate(data: unknown): Gate {
 }
 
 /**
- * Turns an email that Authentica has already verified into a Supabase session:
- * create the user if new (email confirmed, no password), mint a one-time sign-in token with the
- * admin API (no email is sent), and exchange it for a session server-side.
+ * Turns an email whose code has been verified into a Supabase session: create the user if new
+ * (email confirmed, no password), mint a one-time sign-in token with the admin API (no email is
+ * sent), and exchange it for a session server-side. This works with the project's email provider
+ * turned off, which is what keeps passwords and Supabase's own email links from ever being used.
  */
 export async function issueSessionForEmail(
   admin: SupabaseClient,
@@ -53,11 +57,16 @@ export function createDeps(): OtpDeps {
   const url = env('SUPABASE_URL');
   const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY');
   const anonKey = env('SUPABASE_ANON_KEY');
-  const apiKey = env('AUTHENTICA_API_KEY');
-  const templateRaw = env('AUTHENTICA_EMAIL_TEMPLATE_ID');
-  const missing = Object.entries({ SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: serviceKey, SUPABASE_ANON_KEY: anonKey, AUTHENTICA_API_KEY: apiKey })
-    .filter(([, v]) => !v)
-    .map(([k]) => k);
+  const brevoKey = env('BREVO_API_KEY');
+  const resendKey = env('RESEND_API_KEY');
+  const from = parseFrom(env('EMAIL_FROM'));
+
+  const missing: string[] = [];
+  if (!url) missing.push('SUPABASE_URL');
+  if (!serviceKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+  if (!anonKey) missing.push('SUPABASE_ANON_KEY');
+  if (!brevoKey && !resendKey) missing.push('BREVO_API_KEY or RESEND_API_KEY');
+  if (!from) missing.push('EMAIL_FROM');
 
   const noSession = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } };
   const admin = createClient(url || 'http://invalid.local', serviceKey || 'missing', noSession);
@@ -67,10 +76,22 @@ export function createDeps(): OtpDeps {
     return data;
   };
 
+  const sender: EmailSender | null =
+    from && brevoKey ? createBrevoSender({ apiKey: brevoKey, from })
+    : from && resendKey ? createResendSender({ apiKey: resendKey, from })
+    : null;
+
   return {
-    authentica: createAuthenticaClient({
-      apiKey,
-      emailTemplateId: templateRaw && /^\d+$/.test(templateRaw) ? Number(templateRaw) : undefined,
+    provider: createEmailOtpProvider({
+      sender: sender ?? { name: 'none', send: async () => ({ ok: false, status: 0 }) },
+      secret: env('OTP_SECRET') || serviceKey || 'missing',
+      store: {
+        save: async (email, codeHash, ttlSeconds) => {
+          await rpc('otp_store_code', { p_email: email, p_code_hash: codeHash, p_ttl_seconds: ttlSeconds });
+        },
+        check: async (email, codeHash, maxAttempts) =>
+          (await rpc('otp_check_code', { p_email: email, p_code_hash: codeHash, p_max_attempts: maxAttempts })) as CheckOutcome,
+      },
     }),
     limits: {
       registerSend: async (email, ip) => toGate(await rpc('otp_register_send', { p_email: email, p_ip: ip })),

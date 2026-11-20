@@ -1,13 +1,13 @@
 /**
  * Request handlers for SpendNote's email-OTP sign-in.
  *
- *   auth-send-otp    { email }        → Authentica emails a one-time code
- *   auth-verify-otp  { email, code }  → Authentica checks it; if valid we return a Supabase session
+ *   auth-send-otp    { email }        → a one-time code is generated and emailed
+ *   auth-verify-otp  { email, code }  → the code is checked; if valid we return a Supabase session
  *
- * Everything external (Authentica, rate limits in Postgres, session creation) is passed in,
+ * Everything external (code provider, rate limits in Postgres, session creation) is passed in,
  * so these handlers have no Deno-specific code and are unit-tested with Vitest.
  */
-import type { AuthenticaClient } from './authentica.ts';
+import type { OtpProvider } from './email-otp.ts';
 
 export interface Gate {
   allowed: boolean;
@@ -37,7 +37,7 @@ export interface SessionIssuer {
 }
 
 export interface OtpDeps {
-  authentica: AuthenticaClient;
+  provider: OtpProvider;
   limits: RateLimiter;
   sessions: SessionIssuer;
   /** Allowed browser origins for CORS. Empty means any origin. */
@@ -55,7 +55,7 @@ export function normalizeEmail(value: unknown): string | null {
   return email.length <= 254 && EMAIL_RE.test(email) ? email : null;
 }
 
-/** Authentica doesn't document a fixed code length, so accept 4–10 letters or digits. */
+/** Codes are 6 digits; accept 4–10 letters or digits so a future provider change needs no client update. */
 export function normalizeCode(value: unknown): string | null {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
   const code = String(value).replace(/[\s-]+/g, '');
@@ -133,9 +133,9 @@ export async function handleSendOtp(req: Request, deps: OtpDeps): Promise<Respon
       });
     }
 
-    const sent = await deps.authentica.sendEmailOtp(email);
+    const sent = await deps.provider.sendCode(email);
     if (!sent.ok) {
-      deps.log?.('Authentica send-otp failed', { status: sent.status });
+      deps.log?.('sending the code email failed', { status: sent.status });
       if (sent.status === 429) {
         const wait = sent.retryAfter ?? 60;
         return json(429, { error: 'rate_limited', message: `Too many codes requested. Try again in ${waitText(wait)}.`, retryAfter: wait }, cors, {
@@ -172,19 +172,20 @@ export async function handleVerifyOtp(req: Request, deps: OtpDeps): Promise<Resp
       }, cors, { 'Retry-After': String(gate.retryAfter) });
     }
 
-    const result = await deps.authentica.verifyEmailOtp(email, code);
+    const result = await deps.provider.verifyCode(email, code);
     if (result.status === 'invalid') {
       await deps.limits.registerVerifyFailure(email, ip);
       return json(400, { error: 'invalid_code', message: 'That code isn’t right or has expired. Check it, or request a new one.' }, cors);
     }
-    if (result.status === 'rate_limited') {
-      const wait = result.retryAfter ?? 60;
-      return json(429, { error: 'rate_limited', message: `Too many attempts. Try again in ${waitText(wait)}.`, retryAfter: wait }, cors, {
-        'Retry-After': String(wait),
-      });
+    if (result.status === 'expired') {
+      return json(400, { error: 'expired_code', message: 'That code has expired. Request a new one.' }, cors);
+    }
+    if (result.status === 'locked') {
+      await deps.limits.registerVerifyFailure(email, ip);
+      return json(429, { error: 'code_locked', message: 'Too many wrong tries for this code. Request a new code.' }, cors);
     }
     if (result.status === 'error') {
-      deps.log?.('Authentica verify-otp failed', { status: result.httpStatus });
+      deps.log?.('checking the code failed', { status: result.httpStatus });
       return json(502, { error: 'verify_failed', message: 'We couldn’t check the code right now. Try again in a moment.' }, cors);
     }
 

@@ -4,7 +4,7 @@
 
 A personal expense tracker where every expense can carry a note about what it was for. It adds up spending by calendar week (Monday start) and month, and flags expenses that still need an explanation.
 
-Built with React 19, TypeScript, Tailwind CSS 4, Vite, IndexedDB (`idb`), `lucide-react` icons and `vite-plugin-pwa`, with a Supabase (Postgres) backend. Sign-in is by **emailed one-time code only**, sent and checked by [Authentica](https://github.com/AuthenticaSA/Authentica). There are no passwords.
+Built with React 19, TypeScript, Tailwind CSS 4, Vite, IndexedDB (`idb`), `lucide-react` icons and `vite-plugin-pwa`, with a Supabase (Postgres) backend. Sign-in is by **emailed one-time code only**, generated and checked by SpendNote's own server functions and delivered by a free email API (Brevo or Resend). There are no passwords.
 
 The app is offline-first: records live in the browser (IndexedDB) and sync to the user's Postgres rows whenever there's a connection. Without Supabase settings it runs in **local-only mode**, with no sign-in and records kept on the device only.
 
@@ -22,34 +22,40 @@ To install it on a phone, deploy `dist/` to any static HTTPS host. Service worke
 
 ## Set up accounts and sync
 
-You need a Supabase project and an Authentica account. Docker isn't required.
+Sign-in codes are generated and checked by SpendNote's own server functions, then delivered by a free email API. Choose one:
 
-1. **Database.** Link the project and apply the migration:
+| Email API | Free allowance | What you need |
+| --- | --- | --- |
+| [Brevo](https://www.brevo.com) | 300 emails a day | A sender address you confirm by email. No domain needed. |
+| [Resend](https://resend.com) | 3,000 emails a month | Your own domain, to email anyone other than yourself. |
+
+**Already done for the `spendnote` project** (ref `alskqyuvjvfhaawdyzlc`, London):
+- both migrations applied (tables, row level security, sync triggers, rate limits, sign-in codes, email hook);
+- auth settings pushed: public sign-ups off, the email provider off, Supabase's own emails blocked;
+- `auth-send-otp` and `auth-verify-otp` deployed;
+- the project URL and browser key saved in `.env`, commented out.
+
+**What's left:**
+
+1. Create a free account at Brevo or Resend and get an API key.
+   - Brevo: Senders, Domains & Dedicated IPs → Senders → add and confirm your sender address. Then SMTP & API → API keys.
+   - Resend: add and verify your domain, then API Keys.
+2. In your own terminal, from this folder, set the key and the sender. Use the address or domain you verified:
    ```bash
-   supabase link --project-ref <your-project-ref>
-   supabase db push
+   supabase secrets set BREVO_API_KEY=... EMAIL_FROM="SpendNote <you@example.com>"
+   # or: supabase secrets set RESEND_API_KEY=... EMAIL_FROM="SpendNote <hello@yourdomain.com>"
    ```
-2. **Auth settings.** Push `supabase/config.toml` (`supabase config push`), or set these by hand in the dashboard:
-   - *Authentication → Sign In / Providers*: turn **off** "Allow new users to sign up". Accounts are created only by the sign-in function, after Authentica has verified the code.
-   - *Authentication → Hooks*: add a **Send Email** hook of type Postgres function, pointing at `public.hook_block_builtin_auth_email`. This stops Supabase from sending its own magic links or codes, so Authentica email OTP is the only way in.
-3. **Authentica.** In the [Authentica portal](https://portal.authentica.sa), get an API key and set up an email OTP template. Then add the secrets:
-   ```bash
-   supabase secrets set AUTHENTICA_API_KEY=... AUTHENTICA_EMAIL_TEMPLATE_ID=... ALLOWED_ORIGINS=https://your-site.example
-   ```
-   `AUTHENTICA_EMAIL_TEMPLATE_ID` and `ALLOWED_ORIGINS` are optional (see `supabase/functions/.env.example`).
-4. **Functions.** Deploy both sign-in functions. JWT checks are off for them in `config.toml` because the user isn't signed in yet:
-   ```bash
-   supabase functions deploy auth-send-otp auth-verify-otp --use-api
-   ```
-5. **App.** Copy `.env.example` to `.env`, fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then `npm run build`.
+3. In `.env`, remove the `# ` in front of `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then restart `npm run dev` or rebuild.
+
+To redo the setup on another project, run `supabase link --project-ref <ref>`, `supabase db push`, `supabase config push`, `supabase functions deploy auth-send-otp auth-verify-otp --use-api`, then steps 1–3. Docker isn't needed. The database password for this project is in `supabase/.db-password` (git-ignored).
 
 ### How sign-in works
 
-1. The app calls `auth-send-otp` with the email. The function rate-limits the request (one code per minute, 5 per email and 20 per IP address per hour), then asks Authentica to email a code.
-2. The app calls `auth-verify-otp` with the code. Authentica checks it. Wrong codes are capped at 5 per email per 15 minutes.
-3. If the code is right, the function creates the user if they're new (no password), mints a one-time token with the admin API, exchanges it for a normal Supabase session, and returns it. From then on it's a standard Supabase session.
+1. The app sends the email to `auth-send-otp`. The function rate-limits it: one code per minute, 5 per email and 20 per IP address per hour. It then makes a random 6-digit code, stores only a keyed hash of it, and emails the code through Brevo or Resend.
+2. The app sends the code to `auth-verify-otp`. Codes expire after 10 minutes, work once, and allow 5 wrong tries. Only the latest code for an email is valid.
+3. If the code is right, the function creates the user if they're new (no password), mints a one-time token with the admin API, exchanges it for a normal Supabase session, and returns it.
 
-Every table has row level security, so a user can only read or change their own rows. Codes are never stored in our database.
+The project's email provider is switched off, so password sign-in and Supabase's own magic links and email codes are refused outright. The emailed code is the only way in. Every table has row level security, so a user can only read or change their own rows.
 
 ### How sync works
 
@@ -66,7 +72,7 @@ Every change is saved on the device first and queued. When online, queued change
 | `src/lib/sync.ts`, `src/lib/remote.ts` | Offline-first sync with Postgres (push queued changes, pull changes since last sync) |
 | `src/state/auth.tsx`, `src/screens/SignIn.tsx` | Email-code sign-in in the app |
 | `supabase/migrations/` | Tables, row level security, sync triggers, sign-in rate limits, email hook |
-| `supabase/functions/` | `auth-send-otp` and `auth-verify-otp` Edge Functions (Authentica) |
+| `supabase/functions/` | `auth-send-otp` and `auth-verify-otp` Edge Functions (codes, email via Brevo or Resend, sessions) |
 | `src/lib/backup.ts` | Versioned JSON backup, validated restore, CSV export |
 | `src/screens/` | Overview, Expenses, Review, Settings, first-run |
 | `src/sheets/` | Add/edit sheet (incl. MoMo paste), entry details, account and category forms |
@@ -91,5 +97,9 @@ Every change is saved on the device first and queued. When online, queued change
 
 ## What has and hasn't been tested
 
-- **Tested here:** unit tests for the sync engine (two devices, conflicts, offline retries, deletes, restore) and for the sign-in functions (with Authentica's documented request and response formats). The migration was run in an in-process Postgres (PGlite) to check row level security, conflict handling, constraints, rate limits and the email hook. The Edge Functions were type-checked with Deno. The full app was tested in Chrome against an emulated Supabase backend: sign-in, two devices, offline then reconnect, sign-out, and importing older records.
-- **Not tested yet:** the live Authentica API and a real Supabase project (no API key or project was available). Authentica doesn't document what a failed check looks like; the function accepts both `{"status": false}` and HTTP 422. Check that on your first live sign-in.
+- **Unit tests:** the sync engine (two devices, conflicts, offline retries, deletes, restore); the sign-in functions; code generation and hashing; and the exact Brevo and Resend requests.
+- **Database:** both migrations were run in an in-process Postgres (PGlite) to check row level security, conflict handling, constraints, rate limits, the code rules and the email hook.
+- **Edge Functions:** type-checked with Deno.
+- **Browser:** the full app was tested in Chrome against an emulated backend, covering sign-in, two devices, offline then reconnect, sign-out, and importing older records.
+- **Live project:** a session was issued for a verified email while the email provider was off. Row level security and token refresh worked. Password sign-in, Supabase's own email codes, and public sign-ups were all refused. The deployed functions answer and report "not set up" until an email key is added.
+- **Not yet tested:** a real email sent through Brevo or Resend, which needs your API key. Do one test sign-in after step 2.

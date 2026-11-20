@@ -174,7 +174,7 @@ enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
 # SpendNote: off. Accounts are only created by the auth-verify-otp Edge Function (admin API)
-# after Authentica has verified the emailed code, so email OTP via Authentica is the only way in.
+# after the emailed code has been verified, so the emailed code is the only way in.
 enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
@@ -220,7 +220,9 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-# SpendNote: off (see [auth] enable_signup above).
+# SpendNote: off on purpose. In the CLI this switches the whole email provider off, so password
+# sign-in and Supabase's own magic links / email codes are refused ("Email logins are disabled").
+# The sign-in functions still mint sessions through the admin API, so our emailed code is the only way in.
 enable_signup = false
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
@@ -279,8 +281,8 @@ max_frequency = "5s"
 # inactivity_timeout = "8h"
 
 # SpendNote: Supabase must never send its own sign-in emails (magic links, OTPs, password resets).
-# Codes are sent and checked by Authentica through the auth-send-otp / auth-verify-otp functions,
-# so this hook rejects every built-in auth email. See supabase/migrations/*_spendnote_init.sql.
+# Codes are generated, emailed and checked by the auth-send-otp / auth-verify-otp functions, so this
+# hook rejects every built-in auth email (a second guard on top of the email provider being off).
 [auth.hook.send_email]
 enabled = true
 uri = "pg-functions://postgres/public/hook_block_builtin_auth_email"
