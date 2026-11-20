@@ -13,3 +13,4 @@ supabase/functions/.env
 # Supabase CLI
 supabase/.temp
 supabase/.branches
+supabase/.db-password

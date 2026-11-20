@@ -15,7 +15,7 @@ export type VerifyResult = { ok: true } | { ok: false; message: string; retryAft
 interface AuthApi {
   status: AuthStatus;
   user: AuthUser | null;
-  /** Asks the server to email a one-time code (sent by Authentica). */
+  /** Asks the server to email a one-time code. */
   sendCode(email: string): Promise<CodeResult>;
   /** Checks the code; on success the user is signed in. */
   verifyCode(email: string, code: string): Promise<VerifyResult>;

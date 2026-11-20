@@ -23,7 +23,7 @@ function useCountdown() {
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 /**
- * Sign in with an emailed one-time code (sent and checked by Authentica). No passwords.
+ * Sign in with an emailed one-time code (generated and checked by SpendNote's server). No passwords.
  */
 export function SignIn() {
   const auth = useAuth();
@@ -246,7 +246,7 @@ export function SignIn() {
             </>
           )}
           <p className="mt-6 max-w-[420px] text-[13px] leading-relaxed text-white/50">
-            Your email is used only to sign you in. Codes are delivered by our sign-in provider, Authentica.
+            Your email is used only to sign you in. Each code works once and expires after 10 minutes.
           </p>
         </div>
         <div className={step === 'code' ? 'order-1 hidden sm:block lg:order-2' : 'order-1 lg:order-2'}>
