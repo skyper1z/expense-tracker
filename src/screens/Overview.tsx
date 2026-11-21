@@ -11,6 +11,7 @@ import {
 } from '../lib/dates';
 import { currencyInfo } from '../lib/money';
 import { CategoryBadge, LogoMark } from '../components/icons';
+import { InstallBanner } from '../components/InstallPrompt';
 import { ReminderBanner } from '../components/ReminderBanner';
 import { TrendBars } from '../components/TrendBars';
 import { TxRow, useMoney } from '../components/TxRow';
@@ -446,6 +447,7 @@ export function Overview() {
       </header>
 
       <ReminderBanner />
+      <InstallBanner />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(380px,440px)_minmax(0,1fr)] lg:gap-8">
         <div className="flex flex-col gap-6">
