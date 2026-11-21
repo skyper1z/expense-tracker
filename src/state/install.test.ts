@@ -15,6 +15,9 @@ const UA = {
   macSafari: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
   winEdge: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
   winFirefox: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
+  // iOS 26 keeps reporting "OS 18_6" but Safari's own version is 26.
+  iphone17Safari26: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
+  ipadSafari: 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
 };
 
 describe('browser detection for the install screen', () => {
@@ -27,7 +30,7 @@ describe('browser detection for the install screen', () => {
     ['androidChrome', 5, 'android', 'chromium'],
     ['androidWebView', 5, 'android', 'in-app'],
     ['androidFirefox', 5, 'android', 'firefox'],
-    ['androidSamsung', 5, 'android', 'chromium'],
+    ['androidSamsung', 5, 'android', 'samsung'],
     ['macChrome', 0, 'desktop', 'chromium'],
     ['macSafari', 0, 'desktop', 'safari'],
     ['winEdge', 0, 'desktop', 'chromium'],
@@ -37,5 +40,15 @@ describe('browser detection for the install screen', () => {
     expect(r.platform).toBe(platform);
     expect(r.browser).toBe(browser);
     expect(r.isIOS).toBe(platform === 'ios');
+  });
+
+  it('knows iPhone from iPad and reads Safari’s version', () => {
+    expect(detectBrowser(UA.iphone17Safari26, 5)).toMatchObject({ device: 'iphone', browser: 'safari', safariMajor: 26 });
+    expect(detectBrowser(UA.iphoneSafari, 5)).toMatchObject({ device: 'iphone', safariMajor: 18 });
+    expect(detectBrowser(UA.ipadSafari, 5)).toMatchObject({ device: 'ipad', browser: 'safari' });
+    expect(detectBrowser(UA.ipadDesktopMode, 5)).toMatchObject({ device: 'ipad' });
+    expect(detectBrowser(UA.iphoneChrome, 5)).toMatchObject({ device: 'iphone', browser: 'chromium', safariMajor: null });
+    expect(detectBrowser(UA.macSafari, 0)).toMatchObject({ device: 'desktop', browser: 'safari', safariMajor: 18 });
+    expect(detectBrowser(UA.androidChrome, 5)).toMatchObject({ device: 'android' });
   });
 });
