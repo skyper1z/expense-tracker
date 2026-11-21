@@ -1,11 +1,11 @@
-import { Check, Copy, Download, Ellipsis, EllipsisVertical, Menu, MonitorDown, Share, SquarePlus } from 'lucide-react';
+import { Check, Copy, Download, EllipsisVertical, Menu, MonitorDown, Share, SquarePlus } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { LogoMark } from '../components/icons';
 import { Button, cx } from '../components/ui';
 import { promptInstall, useInstall } from '../state/install';
 import { Illustration } from './FirstRun';
 
-type Corner = 'bottom-right' | 'bottom-center' | 'top-right' | 'top-left';
+type Corner = 'bottom-right' | 'bottom-center' | 'bottom-left' | 'top-right' | 'top-left';
 
 interface Guide {
   /** Where the browser button is, so the arrow can point at it. Null when there's nothing to point at. */
@@ -35,17 +35,17 @@ function guideFor(install: ReturnType<typeof useInstall>): Guide {
 
   if (install.device === 'iphone' && install.browser === 'safari') {
     if ((install.safariMajor ?? 0) >= 26) {
-      // iOS 26 (iPhone 17): the default "Compact" layout hides Share behind the ⋯ button.
+      // iOS 26 (iPhone 17), default "Compact" layout: [‹] [≡ address ⟳] [tabs]. Share is in the ≡ menu.
       return {
-        pointer: { at: 'bottom-right', label: <>Tap <Ellipsis size={18} strokeWidth={2.6} className="inline" aria-label="the three dots" /> here</> },
+        pointer: { at: 'bottom-left', label: <>Tap <Menu size={18} strokeWidth={2.6} className="inline" aria-label="the menu button" /> here</> },
         steps: [
-          <>Tap <Tap icon={Ellipsis} /> next to the address bar at the bottom.</>,
+          <>Tap <Tap icon={Menu} /> at the left of the address bar.</>,
           <>Tap <Tap icon={Share}>Share</Tap></>,
-          addToHome,
-          <>Keep <B>Open as Web App</B> switched on, then tap <Tap>Add</Tap></>,
-          openIt,
+          <>Tap <Tap icon={SquarePlus}>Add to Home Screen</Tap> (scroll down if needed).</>,
+          <>Keep <B>Open as Web App</B> on, then tap <Tap>Add</Tap></>,
+          <>Open <B>SpendNote</B> from your home screen.</>,
         ],
-        note: <>Don’t see <B>⋯</B>? If your toolbar shows the <B>Share</B> button, tap that instead.</>,
+        note: <>No <B>≡</B>? Tap <B>⋯</B> or the <B>Share</B> button in your toolbar instead.</>,
       };
     }
     return {
@@ -133,6 +133,8 @@ function Pointer({ at, label }: { at: Corner; label: ReactNode }) {
   const pos = {
     'bottom-right': 'right-3 bottom-[calc(env(safe-area-inset-bottom)+6px)] items-end',
     'bottom-center': 'left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+6px)] items-center',
+    // Safari 26 on iPhone: ≡ is just right of the back button, about 115pt from the left edge.
+    'bottom-left': 'left-[92px] bottom-[calc(env(safe-area-inset-bottom)+6px)] items-start',
     'top-right': 'right-3 top-[calc(env(safe-area-inset-top)+6px)] items-end sm:right-24',
     'top-left': 'left-3 top-[calc(env(safe-area-inset-top)+6px)] items-start',
   }[at];
@@ -142,7 +144,7 @@ function Pointer({ at, label }: { at: Corner; label: ReactNode }) {
       height="56"
       viewBox="0 0 44 56"
       aria-hidden
-      className={cx('drop-shadow-[0_0_14px_rgba(255,106,26,0.7)]', up && 'rotate-180', at === 'bottom-right' || at === 'top-right' ? 'mr-1' : at === 'top-left' ? 'ml-1' : '')}
+      className={cx('drop-shadow-[0_0_14px_rgba(255,106,26,0.7)]', up && 'rotate-180', at === 'bottom-right' || at === 'top-right' ? 'mr-1' : '')}
     >
       <path d="M22 2v42" stroke="#ff8a47" strokeWidth="6" strokeLinecap="round" />
       <path d="M6 30l16 18 16-18" fill="none" stroke="#ff8a47" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
@@ -174,9 +176,9 @@ function Pointer({ at, label }: { at: Corner; label: ReactNode }) {
 
 function Steps({ items }: { items: ReactNode[] }) {
   return (
-    <ol className="mt-5 max-w-[440px] space-y-3.5">
+    <ol className="mt-5 max-w-[440px] space-y-3">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-3 text-[16px] leading-[1.7] text-white/80">
+        <li key={i} className="flex gap-3 text-[16px] leading-[1.6] text-white/80">
           <span
             className={cx(
               'tnum mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold',
@@ -271,9 +273,9 @@ export function InstallGate() {
   } else {
     body = (
       <>
-        {intro}
+        <div className="hidden sm:block">{intro}</div>
         <Steps items={guide.steps} />
-        {guide.note && <p className="mt-4 max-w-[440px] text-[14px] leading-relaxed text-white/60">{guide.note}</p>}
+        {guide.note && <p className="mt-3 max-w-[440px] text-[14px] leading-relaxed text-white/60">{guide.note}</p>}
       </>
     );
   }
@@ -293,18 +295,18 @@ export function InstallGate() {
         aria-hidden
         className="pointer-events-none absolute -bottom-40 left-1/2 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(255,106,26,0.22),transparent)]"
       />
-      <div className="relative mx-auto grid min-h-[calc(100dvh-160px)] max-w-[1040px] grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className="relative mx-auto grid max-w-[1040px] grid-cols-1 items-start gap-10 sm:min-h-[calc(100dvh-160px)] sm:items-center lg:grid-cols-2 lg:gap-16">
         <div className="order-2 lg:order-1">
           <div className="flex items-center gap-3">
             <LogoMark size={44} />
             <span className="text-[19px] font-semibold tracking-[-0.02em]">SpendNote</span>
           </div>
-          <h1 className="mt-6 text-[clamp(2.1rem,8.5vw,3.3rem)] font-semibold leading-[1.04] tracking-[-0.035em] sm:mt-8">
+          <h1 className="mt-5 text-[clamp(2rem,8vw,3.3rem)] font-semibold leading-[1.04] tracking-[-0.035em] sm:mt-8">
             {install.justInstalled ? 'Open SpendNote' : 'Install SpendNote to continue'}
           </h1>
           {body}
           {!install.justInstalled && (
-            <p className="mt-6 max-w-[420px] text-[14px] leading-relaxed text-white/55">
+            <p className="mt-4 max-w-[420px] text-[14px] leading-relaxed text-white/55 sm:mt-6">
               Already installed? Open SpendNote from your home screen or your list of apps.
             </p>
           )}
