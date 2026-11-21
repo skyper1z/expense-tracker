@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { needsAttention } from './lib/calc';
+import { REQUIRE_INSTALL } from './lib/config';
 import { nextOccurrence, showReminderNotification } from './lib/reminders';
 import { LogoMark } from './components/icons';
 import { ConfirmDialog } from './components/Sheet';
@@ -11,6 +12,7 @@ import { FirstRun } from './screens/FirstRun';
 import { Overview } from './screens/Overview';
 import { Review } from './screens/Review';
 import { Settings } from './screens/Settings';
+import { InstallGate } from './screens/InstallGate';
 import { SignIn } from './screens/SignIn';
 import { AccountSheet } from './sheets/AccountSheet';
 import { CategorySheet } from './sheets/CategorySheet';
@@ -18,6 +20,7 @@ import { TransactionDetail } from './sheets/TransactionDetail';
 import { TransactionSheet } from './sheets/TransactionSheet';
 import { AuthProvider, useAuth } from './state/auth';
 import { DataProvider, useData } from './state/data';
+import { useInstall } from './state/install';
 import { useKeyboardInsets } from './state/hooks';
 import { useRoute } from './state/router';
 import { UiProvider, useUi } from './state/ui';
@@ -189,8 +192,13 @@ function Root() {
     return () => window.clearTimeout(t);
   }, []);
 
+  const install = useInstall();
+  // In production SpendNote only runs as an installed app; a normal browser tab shows how to install it.
+  const gated = REQUIRE_INSTALL && !install.runningAsApp;
+
   let screen: React.ReactNode;
   if (!introDone || auth.status === 'loading') screen = <LoadingScreen />;
+  else if (gated) screen = <InstallGate />;
   else if (mode === 'real' && auth.status === 'signed-out') screen = <SignIn />;
   else if (!ready) screen = <LoadingScreen />;
   else if (mode === 'real' && sync.initialPending) screen = <InitialSyncScreen />;
@@ -202,7 +210,7 @@ function Root() {
       </Shell>
     );
 
-  const signedInReady = mode === 'real' && auth.status === 'signed-in' && ready && !sync.initialPending && introDone;
+  const signedInReady = !gated && mode === 'real' && auth.status === 'signed-in' && ready && !sync.initialPending && introDone;
   return (
     <>
       {screen}

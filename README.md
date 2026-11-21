@@ -89,9 +89,21 @@ Every change is saved on the device first and queued. When online, queued change
 - Demo data lives in its own IndexedDB database. Demo backups can't be restored into real data. The demo works without signing in.
 - Backups are version 2. Older version-1 backups still restore; their balance-check data is ignored.
 
+## Installing is required
+
+In production, SpendNote only runs as an installed app. In a normal browser tab it shows **Install SpendNote to continue**, with steps for that device:
+
+- **Chrome, Edge and Android:** an Install button, or the browser menu's "Install app".
+- **iPhone and iPad:** Share → Add to Home Screen.
+- **Mac Safari:** File → Add to Dock.
+
+Browsers that can't install apps (desktop Firefox, and the browsers inside WhatsApp, Instagram and similar) are told to open the link in Chrome, Edge or Safari. Once installed, the app opens straight to SpendNote. When Chrome moves the tab into the new app window, the app opens by itself.
+
+`npm run dev` is never blocked. To let a production build run in a browser tab, for example for testing, build it with `VITE_REQUIRE_INSTALL=false`.
+
 ## Features that depend on the browser
 
-- **Install**: Chrome and Edge show an install button in Settings. On iPhone or iPad use Safari's Share → Add to Home Screen. Firefox desktop doesn't support installing.
+- **Install**: required in production (see above). Desktop Firefox can't install web apps, so its users are pointed to Chrome, Edge or Safari.
 - **Offline**: works after the first visit to a production build (`npm run preview` or a deployed site).
 - **Reminders**: the weekly reminder always appears inside the app the next time it's opened after the scheduled time. If notifications are allowed, it also shows a notification at that time **while SpendNote is open** (including in a background tab). Reminders can't reach a closed app, because that would need a push server.
 - **Paste from clipboard**: the button only appears where the browser allows reading the clipboard. Long-press paste always works.
