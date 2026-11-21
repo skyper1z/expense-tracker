@@ -6,7 +6,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export type Platform = 'ios' | 'android' | 'desktop';
-export type BrowserKind = 'chromium' | 'safari' | 'firefox' | 'in-app' | 'other';
+export type BrowserKind = 'chromium' | 'safari' | 'firefox' | 'samsung' | 'in-app' | 'other';
+export type Device = 'iphone' | 'ipad' | 'android' | 'desktop';
 
 interface InstallState {
   /** The browser has offered to install, so our button can open its install prompt. */
@@ -20,11 +21,15 @@ interface InstallState {
   isIOS: boolean;
   platform: Platform;
   browser: BrowserKind;
+  device: Device;
+  /** Safari's own version (e.g. 26 on iOS 26, where Share moved behind the ⋯ button). */
+  safariMajor: number | null;
 }
 
 let deferred: BeforeInstallPromptEvent | null = null;
 let state: InstallState = {
   canPrompt: false, installed: false, runningAsApp: false, justInstalled: false, isIOS: false, platform: 'desktop', browser: 'other',
+  device: 'desktop', safariMajor: null,
 };
 const listeners = new Set<() => void>();
 
@@ -43,21 +48,29 @@ function detectRunningAsApp(): boolean {
   );
 }
 
-export function detectBrowser(ua: string, maxTouchPoints = 0): { platform: Platform; browser: BrowserKind; isIOS: boolean } {
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Macintosh') && maxTouchPoints > 1);
+export function detectBrowser(
+  ua: string,
+  maxTouchPoints = 0,
+): { platform: Platform; browser: BrowserKind; isIOS: boolean; device: Device; safariMajor: number | null } {
+  const isIPad = /iPad/.test(ua) || (ua.includes('Macintosh') && maxTouchPoints > 1);
+  const isIOS = isIPad || /iPhone|iPod/.test(ua);
   const platform: Platform = isIOS ? 'ios' : /Android/i.test(ua) ? 'android' : 'desktop';
+  const device: Device = isIPad ? 'ipad' : isIOS ? 'iphone' : platform === 'android' ? 'android' : 'desktop';
   // Browsers built into other apps (WhatsApp, Instagram, Facebook, TikTok…) can't install web apps.
   const inApp = /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|Snapchat|TikTok|musical_ly|Twitter|LinkedInApp|GSA\/|; wv\)/i.test(ua);
   const browser: BrowserKind = inApp
     ? 'in-app'
     : /Firefox\/|FxiOS/.test(ua)
       ? 'firefox'
-      : /Chrome\/|CriOS|Edg\/|EdgiOS|SamsungBrowser/.test(ua)
-        ? 'chromium'
-        : /Safari\//.test(ua)
-          ? 'safari'
-          : 'other';
-  return { platform, browser, isIOS };
+      : /SamsungBrowser/.test(ua)
+        ? 'samsung'
+        : /Chrome\/|CriOS|Edg\/|EdgiOS/.test(ua)
+          ? 'chromium'
+          : /Safari\//.test(ua)
+            ? 'safari'
+            : 'other';
+  const v = browser === 'safari' ? /Version\/(\d+)/.exec(ua) : null;
+  return { platform, browser, isIOS, device, safariMajor: v ? Number(v[1]) : null };
 }
 
 /** Must run before React mounts: the browser may fire beforeinstallprompt very early. */
