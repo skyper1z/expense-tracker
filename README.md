@@ -42,10 +42,12 @@ Sign-in codes are generated and checked by SpendNote's own server functions, the
    - Resend: add and verify your domain, then API Keys.
 2. In your own terminal, from this folder, set the key and the sender. Use the address or domain you verified:
    ```bash
-   supabase secrets set BREVO_API_KEY=... EMAIL_FROM="SpendNote <you@example.com>"
-   # or: supabase secrets set RESEND_API_KEY=... EMAIL_FROM="SpendNote <hello@yourdomain.com>"
+   supabase secrets set BREVO_API_KEY=<your Brevo API key> EMAIL_FROM="SpendNote <you@example.com>"
+   # or: supabase secrets set RESEND_API_KEY=<your Resend API key> EMAIL_FROM="SpendNote <hello@yourdomain.com>"
    ```
 3. In `.env`, remove the `# ` in front of `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then restart `npm run dev` or rebuild.
+
+**Deploying (Vercel):** the live site is https://expense-tracker-bab2.vercel.app. `.env` isn't in git, so add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under the Vercel project's Settings → Environment Variables, then redeploy. Vite builds these values into the app, so changing them always needs a new build. The sign-in functions only accept browser requests from the addresses in the `ALLOWED_ORIGINS` secret: currently the Vercel site and `localhost:5173`/`4173`. Add any new domain there.
 
 To redo the setup on another project, run `supabase link --project-ref <ref>`, `supabase db push`, `supabase config push`, `supabase functions deploy auth-send-otp auth-verify-otp --use-api`, then steps 1–3. Docker isn't needed. The database password for this project is in `supabase/.db-password` (git-ignored).
 

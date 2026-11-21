@@ -1,6 +1,7 @@
 import { CirclePlus, Play, ShoppingBasket } from 'lucide-react';
 import { useState } from 'react';
 import { LogoMark } from '../components/icons';
+import { InstallButton } from '../components/InstallPrompt';
 import { Button } from '../components/ui';
 import { useAuth } from '../state/auth';
 import { useData } from '../state/data';
@@ -92,6 +93,7 @@ export function FirstRun() {
             >
               Explore demo
             </Button>
+            <InstallButton />
           </div>
           <p className="mt-6 text-[14px] text-white/55">
             {auth.status === 'signed-in' ? 'Your records are saved to your account and also work offline.' : 'No sign-up. Your records stay on this device.'}{' '}

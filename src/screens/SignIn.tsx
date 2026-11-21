@@ -1,6 +1,7 @@
 import { ArrowLeft, Mail, Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { LogoMark } from '../components/icons';
+import { InstallButton } from '../components/InstallPrompt';
 import { Button, TextInput } from '../components/ui';
 import { useAuth } from '../state/auth';
 import { useData } from '../state/data';
@@ -171,6 +172,7 @@ export function SignIn() {
               >
                 Explore demo
               </Button>
+              <InstallButton className="mt-2 max-w-[420px]" />
             </>
           ) : (
             <>
