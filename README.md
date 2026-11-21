@@ -89,17 +89,18 @@ Every change is saved on the device first and queued. When online, queued change
 - Demo data lives in its own IndexedDB database. Demo backups can't be restored into real data. The demo works without signing in.
 - Backups are version 2. Older version-1 backups still restore; their balance-check data is ignored.
 
-## Installing is required
+## Installing is required on phones and tablets
 
-In production, SpendNote only runs as an installed app. In a normal browser tab it shows **Install SpendNote to continue**, with steps for that device:
+In production, **phones and tablets** must install SpendNote before using it. In a normal browser tab they see **Install SpendNote to continue**, with steps and an arrow pointing at the button to tap:
 
-- **Chrome, Edge and Android:** an Install button, or the browser menu's "Install app".
+- **Chrome and Android:** an Install button, or the browser menu's "Install app".
 - **iPhone and iPad:** Share → Add to Home Screen.
-- **Mac Safari:** File → Add to Dock.
 
-Browsers that can't install apps (desktop Firefox, and the browsers inside WhatsApp, Instagram and similar) are told to open the link in Chrome, Edge or Safari. Once installed, the app opens straight to SpendNote. When Chrome moves the tab into the new app window, the app opens by itself.
+Browsers inside WhatsApp, Instagram and similar apps can't install apps, so they're told to open the link in Chrome or Safari. Once installed, the app opens straight to SpendNote. When Chrome moves the tab into the new app window, the app opens by itself.
 
-`npm run dev` is never blocked. To let a production build run in a browser tab, for example for testing, build it with `VITE_REQUIRE_INSTALL=false`.
+**Computers (Windows, Mac, Linux) open SpendNote straight in the browser.** They can still install it if they want (the Install app button in Chrome and Edge, or File → Add to Dock in Mac Safari), but it's optional.
+
+`npm run dev` is never blocked. To let a production build run in a phone's browser tab, for example for testing, build it with `VITE_REQUIRE_INSTALL=false`.
 
 ## Features that depend on the browser
 

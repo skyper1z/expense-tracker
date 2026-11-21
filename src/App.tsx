@@ -193,8 +193,9 @@ function Root() {
   }, []);
 
   const install = useInstall();
-  // In production SpendNote only runs as an installed app; a normal browser tab shows how to install it.
-  const gated = REQUIRE_INSTALL && !install.runningAsApp;
+  // In production, phones and tablets must install SpendNote first; a normal browser tab shows how.
+  // Computers (Windows, Mac, Linux) can use it straight in the browser.
+  const gated = REQUIRE_INSTALL && install.platform !== 'desktop' && !install.runningAsApp;
 
   let screen: React.ReactNode;
   if (!introDone || auth.status === 'loading') screen = <LoadingScreen />;
