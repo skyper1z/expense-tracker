@@ -1,6 +1,6 @@
 import { Check, Trash2 } from 'lucide-react';
 import { useId, useState } from 'react';
-import { CUSTOM_COLORS, CUSTOM_ICONS } from '../lib/categories';
+import { BUILT_IN_CATEGORIES, CUSTOM_COLORS, CUSTOM_ICONS } from '../lib/categories';
 import { newId } from '../lib/ids';
 import { CATEGORY_ICONS } from '../components/icons';
 import { Sheet, SheetBody, SheetFooter, SheetHeader } from '../components/Sheet';
@@ -71,7 +71,7 @@ export function CategorySheet({ id, closing }: { id?: string; closing: boolean }
   };
 
   const titleId = `${uid}-title`;
-  const icons = [...new Set([...CUSTOM_ICONS, 'basket', 'bus', 'zap', 'bag', 'ticket', 'heart', 'shapes', 'percent'])];
+  const icons = [...new Set([...CUSTOM_ICONS, ...BUILT_IN_CATEGORIES.map((c) => c.icon)])];
   return (
     <Sheet labelledBy={titleId} onClose={requestCloseSheet} closing={closing}>
       <SheetHeader id={titleId} title={existing ? 'Edit category' : 'New category'} onClose={requestCloseSheet} />

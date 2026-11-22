@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
+import { BUILT_IN_CATEGORIES } from './categories';
 import { deleteDatabase, openRepo, type Repo } from './db';
 import { fromRow, toRow, type RemoteStore } from './remote';
 import { syncOnce } from './sync';
@@ -83,10 +84,10 @@ describe('sync', () => {
     const phone = await device();
     const laptop = await device();
     await phone.commit({ putTransactions: [tx('tx_1', { comment: 'Bought vegetables and other things for the week.' })] });
-    expect(await phone.outbox()).toHaveLength(9); // 8 built-in categories + 1 expense
+    expect(await phone.outbox()).toHaveLength(BUILT_IN_CATEGORIES.length + 1); // built-in categories + 1 expense
 
     const r1 = await syncOnce(phone, server.remote);
-    expect(r1.pushed).toBe(9);
+    expect(r1.pushed).toBe(BUILT_IN_CATEGORIES.length + 1);
     expect(await phone.outbox()).toHaveLength(0);
     expect(server.rows('transactions')).toHaveLength(1);
 

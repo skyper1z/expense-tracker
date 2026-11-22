@@ -1,7 +1,8 @@
 import {
   ArrowLeftRight, Baby, Banknote, BookOpen, Briefcase, Bus, Church, Coffee, Coins, CreditCard, Dumbbell, Fuel, Gift,
-  HeartPulse, House, Landmark, PawPrint, Percent, Plane, School, Shapes, Shirt, ShoppingBag, ShoppingBasket, Smartphone,
-  Sparkles, Ticket, Users, Wallet, Wrench, Zap, ArrowDownLeft, type LucideIcon, type LucideProps,
+  HandCoins, Handshake, HeartPulse, House, KeyRound, Landmark, Package, PawPrint, Percent, Plane, PlugZap, Receipt, School,
+  Shapes, Shirt, ShoppingBag, ShoppingBasket, Smartphone, Sparkles, Store, Ticket, Truck, Users, Wallet, Wrench, Zap,
+  ArrowDownLeft, type LucideIcon, type LucideProps,
 } from 'lucide-react';
 import type { Category, PaymentMethod, TxType } from '../lib/types';
 
@@ -10,6 +11,8 @@ export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   shapes: Shapes, percent: Percent, home: House, school: School, gift: Gift, baby: Baby, dumbbell: Dumbbell,
   plane: Plane, coffee: Coffee, phone: Smartphone, wrench: Wrench, paw: PawPrint, church: Church, shirt: Shirt,
   fuel: Fuel, users: Users, book: BookOpen, briefcase: Briefcase, sparkles: Sparkles, coins: Coins,
+  package: Package, handcoins: HandCoins, receipt: Receipt, key: KeyRound, handshake: Handshake, plug: PlugZap,
+  truck: Truck, store: Store,
 };
 
 export const METHOD_ICONS: Record<PaymentMethod, LucideIcon> = {

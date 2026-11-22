@@ -102,8 +102,10 @@ class IdbRepo implements Repo {
       settings: { ...DEFAULT_SETTINGS, ...(settings ?? {}), reminder: { ...DEFAULT_SETTINGS.reminder, ...(settings?.reminder ?? {}) } },
     };
     // Make sure the built-in categories always exist (first run, or after an upgrade adds one).
+    // Skip one the person already made themselves under the same name, so it doesn't appear twice.
     const have = new Set(categories.map((c) => c.id));
-    const missing = BUILT_IN_CATEGORIES.filter((c) => !have.has(c.id));
+    const names = new Set(categories.map((c) => c.name.trim().toLowerCase()));
+    const missing = BUILT_IN_CATEGORIES.filter((c) => !have.has(c.id) && !names.has(c.name.toLowerCase()));
     if (missing.length) {
       await this.commit({ putCategories: missing });
       data.categories = [...categories, ...missing];
