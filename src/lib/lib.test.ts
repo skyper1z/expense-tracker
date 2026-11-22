@@ -6,6 +6,7 @@ import {
   needsAttention, spendingOf, totalSpending, wholePercents,
 } from './calc';
 import { BUILT_IN_CATEGORIES } from './categories';
+import { CATEGORY_ICONS } from '../components/icons';
 import { openDB } from 'idb';
 import { DEMO_DB, deleteDatabase, emptyData, LEGACY_DB, openRepo, userDbName } from './db';
 import { addDays, formatRange, periodContaining, periodTitle, shiftPeriod, startOfWeek } from './dates';
@@ -325,6 +326,32 @@ describe('IndexedDB persistence', () => {
     const demo = await openRepo(DEMO_DB, { trackChanges: false });
     expect((await demo.load()).transactions).toHaveLength(0); // demo DB is separate
     demo.close();
+  });
+});
+
+describe('built-in categories', () => {
+  it('all have a known icon, a unique id and a name that fits', () => {
+    expect(new Set(cats.map((c) => c.id)).size).toBe(cats.length);
+    for (const c of cats) {
+      expect(CATEGORY_ICONS[c.icon], `${c.id} icon`).toBeDefined();
+      expect(c.name.length).toBeLessThanOrEqual(40);
+      expect(c.color).toMatch(/^#[0-9A-F]{6}$/i);
+    }
+  });
+
+  it('adds new built-ins to an existing database, but not over a custom one with the same name', async () => {
+    const repo = await openRepo(userDbName('user-upgrade'), { trackChanges: true });
+    await repo.load();
+    await repo.commit({ deleteCategories: ['fuel', 'salaries'] });
+    await repo.commit({ putCategories: [{ id: 'cat_mine', name: 'fuel ', icon: 'sparkles', color: '#FACC15', builtIn: false, order: 50 }] });
+    repo.close();
+
+    const again = await openRepo(userDbName('user-upgrade'), { trackChanges: true });
+    const loaded = await again.load();
+    again.close();
+    const names = loaded.categories.map((c) => c.name.trim().toLowerCase());
+    expect(names.filter((n) => n === 'fuel')).toHaveLength(1); // the person's own, not a second one
+    expect(loaded.categories.some((c) => c.id === 'salaries')).toBe(true); // re-added
   });
 });
 
